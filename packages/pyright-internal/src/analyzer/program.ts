@@ -369,12 +369,6 @@ export class Program {
             effectiveIsInPyTypedPackage = moduleImportInfo.isThirdPartyPyTypedPresent;
         }
 
-        // Resolve the execution environment for the file so its diagnostic
-        // rule set (including config-level overrides) is used from creation.
-        // This ensures that files added via positional args (which override
-        // configOptions.include) still get the config's diagnostic overrides.
-        const execEnv = this._configOptions.findExecEnvironment(fileUri);
-
         const sourceFile = this._sourceFileFactory.createSourceFile(
             this.serviceProvider,
             fileUri,
@@ -383,10 +377,15 @@ export class Program {
             effectiveIsInPyTypedPackage,
             this._editModeTracker,
             this._console,
-            this._logTracker,
-            /* ipythonMode */ undefined,
-            execEnv.diagnosticRuleSet
+            this._logTracker
         );
+
+        // Apply the execution environment's diagnostic rule set so that
+        // config-level overrides (e.g. reportPrivateImportUsage: false) are
+        // respected immediately. Without this, files added via positional
+        // args get the basic defaults until parse() runs.
+        const execEnv = this._configOptions.findExecEnvironment(fileUri);
+        sourceFile.setInitialDiagnosticRuleSet(execEnv.diagnosticRuleSet);
         sourceFileInfo = new SourceFileInfo(
             sourceFile,
             sourceFile.isTypingStubFile() || sourceFile.isTypeshedStubFile() || sourceFile.isBuiltInStubFile(),
@@ -405,7 +404,6 @@ export class Program {
         let sourceFileInfo = this.getSourceFileInfo(fileUri);
         if (!sourceFileInfo) {
             const moduleImportInfo = this._getModuleImportInfoForFile(fileUri);
-            const execEnv = this._configOptions.findExecEnvironment(fileUri);
             const sourceFile = this._sourceFileFactory.createSourceFile(
                 this.serviceProvider,
                 fileUri,
@@ -415,8 +413,7 @@ export class Program {
                 this._editModeTracker,
                 this._console,
                 this._logTracker,
-                options?.ipythonMode ?? IPythonMode.None,
-                execEnv.diagnosticRuleSet
+                options?.ipythonMode ?? IPythonMode.None
             );
             const chainedFilePath = options?.chainedFileUri;
             sourceFileInfo = new SourceFileInfo(
@@ -1561,7 +1558,6 @@ export class Program {
                 // of the program.
                 let importedFileInfo = this.getSourceFileInfo(importInfo.path);
                 if (!importedFileInfo) {
-                    const importExecEnv = this._configOptions.findExecEnvironment(importInfo.path);
                     const sourceFile = this._sourceFileFactory.createSourceFile(
                         this.serviceProvider,
                         importInfo.path,
@@ -1570,9 +1566,7 @@ export class Program {
                         importInfo.isPyTypedPresent,
                         this._editModeTracker,
                         this._console,
-                        this._logTracker,
-                        /* ipythonMode */ undefined,
-                        importExecEnv.diagnosticRuleSet
+                        this._logTracker
                     );
                     importedFileInfo = new SourceFileInfo(
                         sourceFile,
@@ -1685,7 +1679,6 @@ export class Program {
 
     private _createInterimFileInfo(fileUri: Uri) {
         const moduleImportInfo = this._getModuleImportInfoForFile(fileUri);
-        const execEnv = this._configOptions.findExecEnvironment(fileUri);
         const sourceFile = this._sourceFileFactory.createSourceFile(
             this.serviceProvider,
             fileUri,
@@ -1694,9 +1687,7 @@ export class Program {
             moduleImportInfo.isThirdPartyPyTypedPresent,
             this._editModeTracker,
             this._console,
-            this._logTracker,
-            /* ipythonMode */ undefined,
-            execEnv.diagnosticRuleSet
+            this._logTracker
         );
         const sourceFileInfo = new SourceFileInfo(
             sourceFile,

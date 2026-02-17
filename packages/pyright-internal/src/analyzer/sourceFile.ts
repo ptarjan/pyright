@@ -249,10 +249,9 @@ export class SourceFile {
     private readonly _editMode: SourceFileEditMode;
 
     // Settings that control which diagnostics should be output. The rules
-    // are initialized from the provided initial rule set (typically from
-    // the execution environment's config) or fall back to the basic set.
-    // They are updated after the file is parsed.
-    private _diagnosticRuleSet: DiagnosticRuleSet;
+    // are initialized to the basic set. They should be updated after the
+    // file is parsed, or set earlier via setInitialDiagnosticRuleSet().
+    private _diagnosticRuleSet = getBasicDiagnosticRuleSet();
 
     // Indicate whether this file is for ipython or not.
     private _ipythonMode = IPythonMode.None;
@@ -273,8 +272,7 @@ export class SourceFile {
         editMode: SourceFileEditMode,
         console?: ConsoleInterface,
         logTracker?: LogTracker,
-        ipythonMode?: IPythonMode,
-        initialDiagnosticRuleSet?: DiagnosticRuleSet
+        ipythonMode?: IPythonMode
     ) {
         this.fileSystem = serviceProvider.get(ServiceKeys.fs);
         this._console = console || new StandardConsole();
@@ -319,7 +317,14 @@ export class SourceFile {
         // 'FG' or 'BG' based on current thread.
         this._logTracker = logTracker ?? new LogTracker(console, isMainThread ? 'FG' : 'BG');
         this._ipythonMode = ipythonMode ?? IPythonMode.None;
-        this._diagnosticRuleSet = initialDiagnosticRuleSet ?? getBasicDiagnosticRuleSet();
+    }
+
+    // Sets the initial diagnostic rule set from the execution environment's
+    // config. This ensures files added via positional args get the config's
+    // diagnostic overrides (e.g. reportPrivateImportUsage: false) before
+    // parse() runs. parse() will overwrite this with the final rule set.
+    setInitialDiagnosticRuleSet(ruleSet: DiagnosticRuleSet) {
+        this._diagnosticRuleSet = ruleSet;
     }
 
     getIPythonMode(): IPythonMode {

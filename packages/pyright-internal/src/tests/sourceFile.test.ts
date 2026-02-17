@@ -34,23 +34,20 @@ test('Empty', () => {
     serviceProvider.dispose();
 });
 
-test('SourceFile accepts initialDiagnosticRuleSet', () => {
+test('SourceFile setInitialDiagnosticRuleSet', () => {
     const filePath = combinePaths(process.cwd(), 'tests/samples/test_file1.py');
     const tempFile = new RealTempFile();
     const fs = createFromRealFileSystem(tempFile);
     const serviceProvider = createServiceProvider(tempFile, fs);
 
-    // Create a rule set with reportPrivateImportUsage set to 'none' (off default has it as 'none').
-    const offRuleSet = getOffDiagnosticRuleSet();
-    assert.strictEqual(offRuleSet.reportPrivateImportUsage, 'none');
-
-    // Verify basic defaults have it as 'error'.
+    // Verify basic defaults have reportPrivateImportUsage as 'error'.
     const basicRuleSet = getBasicDiagnosticRuleSet();
     assert.strictEqual(basicRuleSet.reportPrivateImportUsage, 'error');
 
-    // Create a SourceFile with the off rule set as initial.
-    // This verifies the constructor accepts and uses the parameter
-    // (rather than always defaulting to basic).
+    // Create a rule set with reportPrivateImportUsage set to 'none'.
+    const offRuleSet = getOffDiagnosticRuleSet();
+    assert.strictEqual(offRuleSet.reportPrivateImportUsage, 'none');
+
     const sourceFile = new SourceFile(
         serviceProvider,
         Uri.file(filePath, serviceProvider),
@@ -58,13 +55,10 @@ test('SourceFile accepts initialDiagnosticRuleSet', () => {
         false,
         false,
         { isEditMode: false },
-        undefined,
-        undefined,
-        undefined,
-        offRuleSet
     );
 
-    // The SourceFile should be created successfully with the custom rule set.
+    // Verify the setter can be called to override the initial basic defaults.
+    sourceFile.setInitialDiagnosticRuleSet(offRuleSet);
     assert.ok(sourceFile);
     serviceProvider.dispose();
 });
