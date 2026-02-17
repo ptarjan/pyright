@@ -6,6 +6,7 @@
  * Various interfaces/types used in
  */
 import { ConsoleInterface } from '../common/console';
+import { DiagnosticRuleSet } from '../common/configOptions';
 import { LogTracker } from '../common/logTracker';
 import { ServiceProvider } from '../common/serviceProvider';
 import { Uri } from '../common/uri/uri';
@@ -19,6 +20,7 @@ export interface ISourceFileFactory {
         isThirdPartyImport: boolean,
         isThirdPartyPyTypedPresent: boolean,
         editMode: SourceFileEditMode,
+        diagnosticRuleSet?: DiagnosticRuleSet,
         console?: ConsoleInterface,
         logTracker?: LogTracker,
         ipythonMode?: IPythonMode

@@ -369,6 +369,7 @@ export class Program {
             effectiveIsInPyTypedPackage = moduleImportInfo.isThirdPartyPyTypedPresent;
         }
 
+        const execEnv = this._configOptions.findExecEnvironment(fileUri);
         const sourceFile = this._sourceFileFactory.createSourceFile(
             this.serviceProvider,
             fileUri,
@@ -376,6 +377,7 @@ export class Program {
             isThirdPartyImport,
             effectiveIsInPyTypedPackage,
             this._editModeTracker,
+            execEnv.diagnosticRuleSet,
             this._console,
             this._logTracker
         );
@@ -397,6 +399,7 @@ export class Program {
         let sourceFileInfo = this.getSourceFileInfo(fileUri);
         if (!sourceFileInfo) {
             const moduleImportInfo = this._getModuleImportInfoForFile(fileUri);
+            const execEnv = this._configOptions.findExecEnvironment(fileUri);
             const sourceFile = this._sourceFileFactory.createSourceFile(
                 this.serviceProvider,
                 fileUri,
@@ -404,6 +407,7 @@ export class Program {
                 /* isThirdPartyImport */ false,
                 moduleImportInfo.isThirdPartyPyTypedPresent,
                 this._editModeTracker,
+                execEnv.diagnosticRuleSet,
                 this._console,
                 this._logTracker,
                 options?.ipythonMode ?? IPythonMode.None
@@ -1551,6 +1555,7 @@ export class Program {
                 // of the program.
                 let importedFileInfo = this.getSourceFileInfo(importInfo.path);
                 if (!importedFileInfo) {
+                    const importExecEnv = this._configOptions.findExecEnvironment(importInfo.path);
                     const sourceFile = this._sourceFileFactory.createSourceFile(
                         this.serviceProvider,
                         importInfo.path,
@@ -1558,6 +1563,7 @@ export class Program {
                         importInfo.isThirdPartyImport,
                         importInfo.isPyTypedPresent,
                         this._editModeTracker,
+                        importExecEnv.diagnosticRuleSet,
                         this._console,
                         this._logTracker
                     );
@@ -1672,6 +1678,7 @@ export class Program {
 
     private _createInterimFileInfo(fileUri: Uri) {
         const moduleImportInfo = this._getModuleImportInfoForFile(fileUri);
+        const execEnv = this._configOptions.findExecEnvironment(fileUri);
         const sourceFile = this._sourceFileFactory.createSourceFile(
             this.serviceProvider,
             fileUri,
@@ -1679,6 +1686,7 @@ export class Program {
             /* isThirdPartyImport */ false,
             moduleImportInfo.isThirdPartyPyTypedPresent,
             this._editModeTracker,
+            execEnv.diagnosticRuleSet,
             this._console,
             this._logTracker
         );

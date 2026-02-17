@@ -11,7 +11,12 @@ import { isMainThread } from 'worker_threads';
 
 import { OperationCanceledException } from '../common/cancellationUtils';
 import { appendArray } from '../common/collectionUtils';
-import { ConfigOptions, ExecutionEnvironment, getBasicDiagnosticRuleSet } from '../common/configOptions';
+import {
+    ConfigOptions,
+    DiagnosticRuleSet,
+    ExecutionEnvironment,
+    getBasicDiagnosticRuleSet,
+} from '../common/configOptions';
 import { ConsoleInterface, StandardConsole } from '../common/console';
 import { assert } from '../common/debug';
 import { Diagnostic, DiagnosticCategory, TaskListToken, convertLevelToCategory } from '../common/diagnostic';
@@ -243,10 +248,11 @@ export class SourceFile {
 
     private readonly _editMode: SourceFileEditMode;
 
-    // Settings that control which diagnostics should be output. The rules
-    // are initialized to the basic set. They should be updated after the
-    // the file is parsed.
-    private _diagnosticRuleSet = getBasicDiagnosticRuleSet();
+    // Settings that control which diagnostics should be output. Initialized
+    // from the execution environment's diagnostic rule set (which includes
+    // config file overrides). Updated again after the file is parsed to
+    // incorporate any file-level comment directives.
+    private _diagnosticRuleSet: DiagnosticRuleSet;
 
     // Indicate whether this file is for ipython or not.
     private _ipythonMode = IPythonMode.None;
@@ -265,12 +271,14 @@ export class SourceFile {
         isThirdPartyImport: boolean,
         isThirdPartyPyTypedPresent: boolean,
         editMode: SourceFileEditMode,
+        diagnosticRuleSet?: DiagnosticRuleSet,
         console?: ConsoleInterface,
         logTracker?: LogTracker,
         ipythonMode?: IPythonMode
     ) {
         this.fileSystem = serviceProvider.get(ServiceKeys.fs);
         this._console = console || new StandardConsole();
+        this._diagnosticRuleSet = diagnosticRuleSet ?? getBasicDiagnosticRuleSet();
         this._writableData = new WriteableData();
 
         this._editMode = editMode;

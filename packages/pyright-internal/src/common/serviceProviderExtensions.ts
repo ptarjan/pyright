@@ -11,6 +11,7 @@ import { IPythonMode, SourceFile, SourceFileEditMode } from '../analyzer/sourceF
 import { PartialStubService, SupportPartialStubs } from '../partialStubService';
 import { CancellationProvider, DefaultCancellationProvider } from './cancellationUtils';
 import { CaseSensitivityDetector } from './caseSensitivityDetector';
+import { DiagnosticRuleSet } from './configOptions';
 import { ConsoleInterface, NullConsole } from './console';
 import { DocStringService, PyrightDocStringService } from './docStringService';
 import { FileSystem, TempFile } from './fileSystem';
@@ -124,6 +125,7 @@ const DefaultSourceFileFactory: ISourceFileFactory = {
         isThirdPartyImport: boolean,
         isThirdPartyPyTypedPresent: boolean,
         editMode: SourceFileEditMode,
+        diagnosticRuleSet?: DiagnosticRuleSet,
         console?: ConsoleInterface,
         logTracker?: LogTracker,
         ipythonMode?: IPythonMode
@@ -135,6 +137,7 @@ const DefaultSourceFileFactory: ISourceFileFactory = {
             isThirdPartyImport,
             isThirdPartyPyTypedPresent,
             editMode,
+            diagnosticRuleSet,
             console,
             logTracker,
             ipythonMode
