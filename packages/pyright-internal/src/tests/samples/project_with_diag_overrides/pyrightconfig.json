@@ -1,0 +1,5 @@
+{
+    "include": ["subdir"],
+    "typeCheckingMode": "basic",
+    "reportPrivateImportUsage": false
+}
