@@ -125,10 +125,10 @@ const DefaultSourceFileFactory: ISourceFileFactory = {
         isThirdPartyImport: boolean,
         isThirdPartyPyTypedPresent: boolean,
         editMode: SourceFileEditMode,
-        diagnosticRuleSet?: DiagnosticRuleSet,
         console?: ConsoleInterface,
         logTracker?: LogTracker,
-        ipythonMode?: IPythonMode
+        ipythonMode?: IPythonMode,
+        diagnosticRuleSet?: DiagnosticRuleSet
     ) {
         return new SourceFile(
             serviceProvider,
@@ -137,10 +137,10 @@ const DefaultSourceFileFactory: ISourceFileFactory = {
             isThirdPartyImport,
             isThirdPartyPyTypedPresent,
             editMode,
-            diagnosticRuleSet,
             console,
             logTracker,
-            ipythonMode
+            ipythonMode,
+            diagnosticRuleSet
         );
     },
 };

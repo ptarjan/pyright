@@ -20,10 +20,10 @@ export interface ISourceFileFactory {
         isThirdPartyImport: boolean,
         isThirdPartyPyTypedPresent: boolean,
         editMode: SourceFileEditMode,
-        diagnosticRuleSet?: DiagnosticRuleSet,
         console?: ConsoleInterface,
         logTracker?: LogTracker,
-        ipythonMode?: IPythonMode
+        ipythonMode?: IPythonMode,
+        diagnosticRuleSet?: DiagnosticRuleSet
     ): SourceFile;
 }
 

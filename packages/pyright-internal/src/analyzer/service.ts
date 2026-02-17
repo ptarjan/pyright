@@ -1148,11 +1148,7 @@ export class AnalyzerService {
                 commandLineOptions.analyzeUnannotatedFunctions;
         }
 
-        // Override the include and exclude based on command-line file specs.
-        // When positional file/directory arguments are provided (e.g., `pyright dir1 dir2`),
-        // they should override both the "include" and "exclude" settings from the config file
-        // so the specified files are always analyzed. The diagnostic rule overrides from the
-        // config file (stored in configOptions.diagnosticRuleSet) are intentionally preserved.
+        // Override the include based on command-line settings.
         if (commandLineOptions.includeFileSpecsOverride) {
             configOptions.include = [];
             commandLineOptions.includeFileSpecsOverride.forEach((include) => {
@@ -1160,12 +1156,6 @@ export class AnalyzerService {
                     getFileSpec(Uri.file(include, this.serviceProvider, /* checkRelative */ true), '.')
                 );
             });
-
-            // Clear the exclude list from the config file so that positional arg
-            // files/directories are not silently excluded. Default excludes
-            // (node_modules, __pycache__, etc.) will be re-added by _ensureDefaultOptions
-            // if the exclude list is empty.
-            configOptions.exclude = [];
         }
 
         // Override the venvPath based on the command-line setting.

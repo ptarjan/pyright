@@ -668,18 +668,6 @@ describe(`config test'}`, () => {
             'none',
             'Exec env for file in overridden include should have reportPrivateImportUsage as none'
         );
-
-        // Verify that config file excludes are cleared when includeFileSpecsOverride is set.
-        // The config has exclude: ["subfolder2"], but when positional args override include,
-        // the exclude should also be cleared so positional arg files aren't silently excluded.
-        // Default excludes (node_modules, __pycache__, etc.) are re-added by _ensureDefaultOptions.
-        const configExcludes = configWithOverride.exclude.map((e) => e.wildcardRoot.toString());
-        const hasSubfolder2Exclude = configExcludes.some((e) => e.includes('subfolder2'));
-        assert.strictEqual(
-            hasSubfolder2Exclude,
-            false,
-            'Config file exclude for subfolder2 should be cleared when includeFileSpecsOverride is set'
-        );
     });
 
     function createAnalyzer(console?: ConsoleInterface) {

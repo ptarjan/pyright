@@ -1,5 +1,4 @@
 {
     "include": ["subfolder1"],
-    "exclude": ["subfolder2"],
     "reportPrivateImportUsage": false
 }
