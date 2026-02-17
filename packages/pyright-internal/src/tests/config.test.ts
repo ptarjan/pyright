@@ -601,6 +601,87 @@ describe(`config test'}`, () => {
         assert.deepStrictEqual(config.defaultPythonVersion, pythonVersion3_13);
     });
 
+    test('Diagnostic overrides preserved when includeFileSpecsOverride is set', () => {
+        const cwd = normalizePath(process.cwd());
+        const nullConsole = new NullConsole();
+        const service = createAnalyzer(nullConsole);
+
+        // Test without includeFileSpecsOverride - config overrides should be applied.
+        const commandLineOptions1 = new CommandLineOptions(cwd, /* fromLanguageServer */ false);
+        commandLineOptions1.configFilePath = 'src/tests/samples/project_with_diag_overrides';
+        service.setOptions(commandLineOptions1);
+
+        const configWithoutOverride = service.test_getConfigOptions(commandLineOptions1);
+
+        // The config sets reportPrivateImportUsage to false, which maps to 'none'.
+        assert.strictEqual(
+            configWithoutOverride.diagnosticRuleSet.reportPrivateImportUsage,
+            'none',
+            'Config override should set reportPrivateImportUsage to none'
+        );
+
+        // Verify the default execution environment also has the override.
+        const defaultExecEnv1 = configWithoutOverride.getDefaultExecEnvironment();
+        assert.strictEqual(
+            defaultExecEnv1.diagnosticRuleSet.reportPrivateImportUsage,
+            'none',
+            'Default exec env should have reportPrivateImportUsage as none without includeFileSpecsOverride'
+        );
+
+        // Test WITH includeFileSpecsOverride (simulating positional args) - config overrides should STILL be applied.
+        const service2 = createAnalyzer(nullConsole);
+        const commandLineOptions2 = new CommandLineOptions(cwd, /* fromLanguageServer */ false);
+        commandLineOptions2.configFilePath = 'src/tests/samples/project_with_diag_overrides';
+        commandLineOptions2.configSettings.includeFileSpecsOverride = [
+            combinePaths(cwd, 'src/tests/samples/project_with_diag_overrides/subfolder1'),
+        ];
+        service2.setOptions(commandLineOptions2);
+
+        const configWithOverride = service2.test_getConfigOptions(commandLineOptions2);
+
+        // The include should be overridden to the positional arg.
+        assert.strictEqual(configWithOverride.include.length, 1);
+
+        // The diagnostic override from the config should STILL be applied.
+        assert.strictEqual(
+            configWithOverride.diagnosticRuleSet.reportPrivateImportUsage,
+            'none',
+            'Config override should set reportPrivateImportUsage to none even with includeFileSpecsOverride'
+        );
+
+        // Verify the default execution environment also has the override.
+        const defaultExecEnv2 = configWithOverride.getDefaultExecEnvironment();
+        assert.strictEqual(
+            defaultExecEnv2.diagnosticRuleSet.reportPrivateImportUsage,
+            'none',
+            'Default exec env should have reportPrivateImportUsage as none with includeFileSpecsOverride'
+        );
+
+        // Verify that findExecEnvironment for a file in the overridden include also has the override.
+        const fileUri = Uri.file(
+            combinePaths(cwd, 'src/tests/samples/project_with_diag_overrides/subfolder1/sample.py'),
+            service2.serviceProvider
+        );
+        const fileExecEnv = configWithOverride.findExecEnvironment(fileUri);
+        assert.strictEqual(
+            fileExecEnv.diagnosticRuleSet.reportPrivateImportUsage,
+            'none',
+            'Exec env for file in overridden include should have reportPrivateImportUsage as none'
+        );
+
+        // Verify that config file excludes are cleared when includeFileSpecsOverride is set.
+        // The config has exclude: ["subfolder2"], but when positional args override include,
+        // the exclude should also be cleared so positional arg files aren't silently excluded.
+        // Default excludes (node_modules, __pycache__, etc.) are re-added by _ensureDefaultOptions.
+        const configExcludes = configWithOverride.exclude.map((e) => e.wildcardRoot.toString());
+        const hasSubfolder2Exclude = configExcludes.some((e) => e.includes('subfolder2'));
+        assert.strictEqual(
+            hasSubfolder2Exclude,
+            false,
+            'Config file exclude for subfolder2 should be cleared when includeFileSpecsOverride is set'
+        );
+    });
+
     function createAnalyzer(console?: ConsoleInterface) {
         const cons = console ?? new NullConsole();
         const fs = createFromRealFileSystem(tempFile, cons);
