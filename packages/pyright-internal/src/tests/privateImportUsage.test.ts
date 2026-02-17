@@ -166,4 +166,108 @@ describe('reportPrivateImportUsage with tracked library files', () => {
         program2.dispose();
         sp.dispose();
     });
+
+    test('config override reportPrivateImportUsage=none should suppress errors for tracked files', () => {
+        // This tests the bug where positional args override configOptions.include,
+        // causing diagnostic rule overrides (like reportPrivateImportUsage: false)
+        // to be silently ignored. The fix applies the execution environment's
+        // diagnosticRuleSet to tracked files via setInitialDiagnosticRuleSet().
+
+        const files = [
+            // pkg_a in library (defines the original function)
+            {
+                path: combinePaths(libraryRoot, 'pkg_a', '__init__.py'),
+                content: '',
+            },
+            {
+                path: combinePaths(libraryRoot, 'pkg_a', 'py.typed'),
+                content: '',
+            },
+            {
+                path: combinePaths(libraryRoot, 'pkg_a', 'utils.py'),
+                content: 'def helper_func(): pass',
+            },
+            // pkg_b in library (re-imports without re-exporting, has py.typed)
+            {
+                path: combinePaths(libraryRoot, 'pkg_b', '__init__.py'),
+                content: '',
+            },
+            {
+                path: combinePaths(libraryRoot, 'pkg_b', 'py.typed'),
+                content: '',
+            },
+            {
+                path: combinePaths(libraryRoot, 'pkg_b', 'reexport.py'),
+                content: 'from pkg_a.utils import helper_func', // No __all__, not re-exported
+            },
+            // Consumer source file that imports from pkg_b
+            {
+                path: normalizeSlashes('/src/consumer.py'),
+                content: 'from pkg_b.reexport import helper_func', // Would error with default rules
+            },
+        ];
+
+        const sp = createServiceProviderFromFiles(files);
+
+        // First: verify that with reportPrivateImportUsage='error', we get errors
+        const configWithError = new ConfigOptions(UriEx.file('/'));
+        configWithError.diagnosticRuleSet.reportPrivateImportUsage = 'error';
+
+        const importResolver = new ImportResolver(
+            sp,
+            configWithError,
+            new TestAccessHost(sp.fs().getModulePath(), [UriEx.file(libraryRoot)])
+        );
+
+        const consumerUri = UriEx.file('/src/consumer.py');
+
+        const program1 = new Program(importResolver, configWithError, sp);
+        program1.setTrackedFiles([consumerUri]);
+        while (program1.analyze()) {}
+
+        const sourceFile1 = program1.getSourceFile(consumerUri);
+        assert(sourceFile1, 'Source file should exist');
+        const diags1 = sourceFile1.getDiagnostics(configWithError) || [];
+        const errors1 = diags1.filter((d) => d.category === DiagnosticCategory.Error);
+
+        assert.strictEqual(
+            errors1.length,
+            1,
+            `Expected 1 error with reportPrivateImportUsage='error', got ${errors1.length}`
+        );
+
+        program1.dispose();
+
+        // Second: verify that with reportPrivateImportUsage='none' (simulating a
+        // config override like "reportPrivateImportUsage": false), errors are suppressed.
+        // This is the scenario that was broken when positional args replaced include.
+        const configWithNone = new ConfigOptions(UriEx.file('/'));
+        configWithNone.diagnosticRuleSet.reportPrivateImportUsage = 'none';
+
+        const importResolver2 = new ImportResolver(
+            sp,
+            configWithNone,
+            new TestAccessHost(sp.fs().getModulePath(), [UriEx.file(libraryRoot)])
+        );
+
+        const program2 = new Program(importResolver2, configWithNone, sp);
+        program2.setTrackedFiles([consumerUri]);
+        while (program2.analyze()) {}
+
+        const sourceFile2 = program2.getSourceFile(consumerUri);
+        assert(sourceFile2, 'Source file should exist in second program');
+        const diags2 = sourceFile2.getDiagnostics(configWithNone) || [];
+        const errors2 = diags2.filter((d) => d.category === DiagnosticCategory.Error);
+
+        assert.strictEqual(
+            errors2.length,
+            0,
+            `Expected 0 errors with reportPrivateImportUsage='none', got ${errors2.length}: ` +
+                `${errors2.map((e) => e.message).join(', ')}. ` +
+                `Config override should suppress private import errors.`
+        );
+
+        program2.dispose();
+        sp.dispose();
+    });
 });
