@@ -11,7 +11,12 @@ import { isMainThread } from 'worker_threads';
 
 import { OperationCanceledException } from '../common/cancellationUtils';
 import { appendArray } from '../common/collectionUtils';
-import { ConfigOptions, ExecutionEnvironment, getBasicDiagnosticRuleSet } from '../common/configOptions';
+import {
+    ConfigOptions,
+    DiagnosticRuleSet,
+    ExecutionEnvironment,
+    getBasicDiagnosticRuleSet,
+} from '../common/configOptions';
 import { ConsoleInterface, StandardConsole } from '../common/console';
 import { assert } from '../common/debug';
 import { Diagnostic, DiagnosticCategory, TaskListToken, convertLevelToCategory } from '../common/diagnostic';
@@ -244,9 +249,10 @@ export class SourceFile {
     private readonly _editMode: SourceFileEditMode;
 
     // Settings that control which diagnostics should be output. The rules
-    // are initialized to the basic set. They should be updated after the
-    // the file is parsed.
-    private _diagnosticRuleSet = getBasicDiagnosticRuleSet();
+    // are initialized from the provided initial rule set (typically from
+    // the execution environment's config) or fall back to the basic set.
+    // They are updated after the file is parsed.
+    private _diagnosticRuleSet: DiagnosticRuleSet;
 
     // Indicate whether this file is for ipython or not.
     private _ipythonMode = IPythonMode.None;
@@ -267,7 +273,8 @@ export class SourceFile {
         editMode: SourceFileEditMode,
         console?: ConsoleInterface,
         logTracker?: LogTracker,
-        ipythonMode?: IPythonMode
+        ipythonMode?: IPythonMode,
+        initialDiagnosticRuleSet?: DiagnosticRuleSet
     ) {
         this.fileSystem = serviceProvider.get(ServiceKeys.fs);
         this._console = console || new StandardConsole();
@@ -312,6 +319,7 @@ export class SourceFile {
         // 'FG' or 'BG' based on current thread.
         this._logTracker = logTracker ?? new LogTracker(console, isMainThread ? 'FG' : 'BG');
         this._ipythonMode = ipythonMode ?? IPythonMode.None;
+        this._diagnosticRuleSet = initialDiagnosticRuleSet ?? getBasicDiagnosticRuleSet();
     }
 
     getIPythonMode(): IPythonMode {

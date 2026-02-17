@@ -8,6 +8,7 @@
 import { CacheManager } from '../analyzer/cacheManager';
 import { ISourceFileFactory } from '../analyzer/programTypes';
 import { IPythonMode, SourceFile, SourceFileEditMode } from '../analyzer/sourceFile';
+import { DiagnosticRuleSet } from './configOptions';
 import { PartialStubService, SupportPartialStubs } from '../partialStubService';
 import { CancellationProvider, DefaultCancellationProvider } from './cancellationUtils';
 import { CaseSensitivityDetector } from './caseSensitivityDetector';
@@ -126,7 +127,8 @@ const DefaultSourceFileFactory: ISourceFileFactory = {
         editMode: SourceFileEditMode,
         console?: ConsoleInterface,
         logTracker?: LogTracker,
-        ipythonMode?: IPythonMode
+        ipythonMode?: IPythonMode,
+        initialDiagnosticRuleSet?: DiagnosticRuleSet
     ) {
         return new SourceFile(
             serviceProvider,
@@ -137,7 +139,8 @@ const DefaultSourceFileFactory: ISourceFileFactory = {
             editMode,
             console,
             logTracker,
-            ipythonMode
+            ipythonMode,
+            initialDiagnosticRuleSet
         );
     },
 };

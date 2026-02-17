@@ -369,6 +369,12 @@ export class Program {
             effectiveIsInPyTypedPackage = moduleImportInfo.isThirdPartyPyTypedPresent;
         }
 
+        // Resolve the execution environment for the file so its diagnostic
+        // rule set (including config-level overrides) is used from creation.
+        // This ensures that files added via positional args (which override
+        // configOptions.include) still get the config's diagnostic overrides.
+        const execEnv = this._configOptions.findExecEnvironment(fileUri);
+
         const sourceFile = this._sourceFileFactory.createSourceFile(
             this.serviceProvider,
             fileUri,
@@ -377,7 +383,9 @@ export class Program {
             effectiveIsInPyTypedPackage,
             this._editModeTracker,
             this._console,
-            this._logTracker
+            this._logTracker,
+            /* ipythonMode */ undefined,
+            execEnv.diagnosticRuleSet
         );
         sourceFileInfo = new SourceFileInfo(
             sourceFile,
@@ -397,6 +405,7 @@ export class Program {
         let sourceFileInfo = this.getSourceFileInfo(fileUri);
         if (!sourceFileInfo) {
             const moduleImportInfo = this._getModuleImportInfoForFile(fileUri);
+            const execEnv = this._configOptions.findExecEnvironment(fileUri);
             const sourceFile = this._sourceFileFactory.createSourceFile(
                 this.serviceProvider,
                 fileUri,
@@ -406,7 +415,8 @@ export class Program {
                 this._editModeTracker,
                 this._console,
                 this._logTracker,
-                options?.ipythonMode ?? IPythonMode.None
+                options?.ipythonMode ?? IPythonMode.None,
+                execEnv.diagnosticRuleSet
             );
             const chainedFilePath = options?.chainedFileUri;
             sourceFileInfo = new SourceFileInfo(
@@ -1551,6 +1561,7 @@ export class Program {
                 // of the program.
                 let importedFileInfo = this.getSourceFileInfo(importInfo.path);
                 if (!importedFileInfo) {
+                    const importExecEnv = this._configOptions.findExecEnvironment(importInfo.path);
                     const sourceFile = this._sourceFileFactory.createSourceFile(
                         this.serviceProvider,
                         importInfo.path,
@@ -1559,7 +1570,9 @@ export class Program {
                         importInfo.isPyTypedPresent,
                         this._editModeTracker,
                         this._console,
-                        this._logTracker
+                        this._logTracker,
+                        /* ipythonMode */ undefined,
+                        importExecEnv.diagnosticRuleSet
                     );
                     importedFileInfo = new SourceFileInfo(
                         sourceFile,
@@ -1672,6 +1685,7 @@ export class Program {
 
     private _createInterimFileInfo(fileUri: Uri) {
         const moduleImportInfo = this._getModuleImportInfoForFile(fileUri);
+        const execEnv = this._configOptions.findExecEnvironment(fileUri);
         const sourceFile = this._sourceFileFactory.createSourceFile(
             this.serviceProvider,
             fileUri,
@@ -1680,7 +1694,9 @@ export class Program {
             moduleImportInfo.isThirdPartyPyTypedPresent,
             this._editModeTracker,
             this._console,
-            this._logTracker
+            this._logTracker,
+            /* ipythonMode */ undefined,
+            execEnv.diagnosticRuleSet
         );
         const sourceFileInfo = new SourceFileInfo(
             sourceFile,
